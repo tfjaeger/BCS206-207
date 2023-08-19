@@ -1,6 +1,6 @@
 ---
-title: "BCS 519: Simulation-based approaches"
-author: Florian Jaeger
+title: "PhD Skillz: Sampling-based approaches"
+author: T. Florian Jaeger
 email: fjaeger@ur.rochester.edu
 format:
   revealjs:
@@ -124,12 +124,13 @@ head(null_distribution, 20)
 sum(null_distribution >= 26) / sum(!is.na(null_distribution))
 ```
 
-## Using simulations to estimate the Type I error rate of an analysis
+## Using simulations to estimate the *Type I error rate* of an analysis
 
-1.  We generate data under some assumption (e.g., a Normally distributed outcome) or resample it from existing real data *without adding any differences between conditions*.
-2.  We apply whatever type(s) of analysis we're interested in estimating Type I error for
-3.  We repeat this process many times, each time storing whether the p-value(s) of interest were less than our significance criterion.
-4.  The proportion of significant results is the Type I error rate.
+1.  We generate data under some assumption (e.g., a Normally distributed outcome) or resample it from existing real data.
+2.  We add zero effect.
+3.  We apply whatever type(s) of analysis we're interested in estimating Type I error for
+4.  We repeat this process many times, each time storing whether the p-value(s) of interest were less than our significance criterion.
+5.  The proportion of significant results is the Type I error rate.
 
 ## An example problem
 
@@ -380,7 +381,14 @@ get_TypeI <-
       ends_with("p.value"),
       list(
         "convergence" = ~ sum(!is.na(.x)) / length(.x),
-        "Type_I_error" = ~ round(mean(.x < .05, na.rm = T), 3)),
+        "Type_I_error" =  
+          function(x) {
+            # Here we count t-tests that yield an NA results as *not* a Type I error.
+            # This assumes an experimenter who got such a result (hopefully!) would not
+            # conclude that they found a significant effect.
+            x <- ifelse(is.na(x), 1, x)
+            round(mean(x < .05), 3)
+      }),
     .names = "{.fn}_{.col}")) %>%
   rename_all(.funs = ~ gsub("\\.p\\.value", "", .x)) %>%
   # Since we're setting analyses to NA when either of the RT
@@ -423,7 +431,7 @@ For example, we assumed that RTs are drawn from a normal distribution, but that 
 
 . . .
 
--   We can compare the Type I error rate of the $t$-test obtained above to the Type I error rate of the same $t$-test if the data is generated following the ground truth (see [Git repo](https://github.com/tfjaeger/BCS206-207-R-lectures/blob/2021-2022/scripts/R/6-Type-I-error-and-power-analyses.Rmd)).
+-   We can compare the Type I error rate of the $t$-test obtained above to the Type I error rate of the same $t$-test if the data is generated following the ground truth (see [Git repo](https://github.com/tfjaeger/BCS206-207-R-lectures/blob/2024-PhD-skillz-workshop/scripts/R/6-Type-I-error-and-power-analyses.Rmd)).
 
 ## What if we don't know the ground truth?
 
@@ -474,3 +482,23 @@ d.type1.boot %>%
 
 -   Improving the Type I error rate for RTs by bringing it closer to .05.
 -   Type I error rate for accuracy remains conservative. $t$-tests are not suited for such data.
+
+## Using simulations to estimate *statistical power* of an analysis
+
+Can you guess what we'd need to add to turn this approach into a power analysis?
+
+1.  [We generate data under some assumption (e.g., a Normally distributed outcome) or resample it from existing real data.]{style="color:gray"}
+2.  [We add a zero effect.]{style="color:gray"}
+3.  [We apply whatever type(s) of analysis we're interested in estimating **Type I error rate** for]{style="color: gray"}
+4.  [We repeat this process many times, each time storing whether the p-value(s) of interest were less than our significance criterion.]{style="color: gray"}
+5.  [The proportion of significant results is the **Type I error rate**.]{style="color:gray"}
+
+## Using simulations to estimate *statistical power* of an analysis
+
+Can you guess what we'd need to add to turn this approach into a power analysis?
+
+1.  [We generate data under some assumption (e.g., a Normally distributed outcome) or resample it from existing real data.]{style="color:gray"}
+2.  We add a **non-zero** effect that we want to estimate power for (e.g., by subtracting half of it from one condition and adding half of it to the other condition).
+3.  [We apply whatever type(s) of analysis we're interested in estimating]{style="color:gray"} **power** [for]{style="color: gray"}
+4.  [We repeat this process many times, each time storing whether the p-value(s) of interest were less than our significance criterion.]{style="color: gray"}
+5.  [The proportion of significant results is the]{style="color:gray"} **power**.
